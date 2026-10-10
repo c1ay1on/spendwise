@@ -59,4 +59,4 @@ jobs:
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
           SSH="ssh -i ~/.ssh/deploy_key"
           rsync -az --delete -e "$SSH" dist/ "$USER@$HOST:/var/www/spendwise/"
-          $SSH "$USER@$HOST" "bash ~/spendwise/infra/deploy.sh"
+          $SSH "$USER@$HOST" "cd ~/spendwise && git fetch origin main && git reset --hard origin/main && bash infra/deploy.sh"
