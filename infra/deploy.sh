@@ -8,8 +8,8 @@ git reset --hard origin/main
 bash infra/fetch-env.sh
 
 if [ -f backend/db/schema.sql ]; then
-  set -a; source backend/.env; set +a
-  MYSQL_PWD="$DB_PASSWORD" mysql -h "$DB_HOST" -u "$DB_USER" "$DB_NAME" < backend/db/schema.sql
+ envval() { grep -m1 "^$1=" backend/.env | cut -d= -f2-; }
+ MYSQL_PWD="$(envval DB_PASSWORD)" mysql -h "$(envval DB_HOST)" -u "$(envval DB_USER)" "$(envval DB_NAME)" < backend/db/schema.sql
 fi
 
 cd backend
