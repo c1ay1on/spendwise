@@ -1,6 +1,7 @@
--- DEV ONLY. Never run on RDS. Assumes user id 1 exists.
+-- DEV ONLY. Never run on RDS. Assumes user id 1 exists (register a user first).
 SET @uid = 1;
 SET @m = CAST(DATE_FORMAT(CURDATE(), '%Y-%m-01') AS DATE);
+
 INSERT INTO expenses (user_id, category_id, amount, description, expense_date) VALUES
 (@uid, (SELECT id FROM categories WHERE user_id IS NULL AND name = 'Food'),          250.00,  'Lunch',        DATE_ADD(@m, INTERVAL 1 DAY)),
 (@uid, (SELECT id FROM categories WHERE user_id IS NULL AND name = 'Transport'),     120.50,  'Auto fare',    DATE_ADD(@m, INTERVAL 2 DAY)),

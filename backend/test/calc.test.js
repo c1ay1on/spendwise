@@ -26,7 +26,6 @@ test('budget statuses', () => {
   });
   assert.strictEqual(calcBudgetStatus(1000, 800).alert, 'warning');
   assert.strictEqual(calcBudgetStatus(1000, 1000).alert, 'warning');
-  
   const over = calcBudgetStatus(1000, 1200);
   assert.strictEqual(over.alert, 'over');
   assert.strictEqual(over.remaining, -200);

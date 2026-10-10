@@ -1,21 +1,24 @@
 {
-  "name": "spendwise-backend",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "Backend API for SpendWise",
+  "description": "SpendWise API",
   "main": "server.js",
+  "private": true,
   "scripts": {
+    "start": "node server.js",
     "dev": "node --env-file=.env --watch server.js",
     "test": "node --test"
   },
+  "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.664.0",
-    "@aws-sdk/lib-storage": "^3.664.0",
-    "@aws-sdk/s3-request-presigner": "^3.664.0",
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "express": "^4.21.0",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.11.3"
+    "@aws-sdk/client-s3": "^3.1146.0",
+    "@aws-sdk/lib-storage": "^3.1146.0",
+    "@aws-sdk/s3-request-presigner": "^3.1146.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
+    "mysql2": "^3.24.5"
   }
 }

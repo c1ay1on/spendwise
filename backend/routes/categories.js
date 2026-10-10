@@ -24,6 +24,7 @@ router.post('/', auth, wrap(async (req, res) => {
     [name, req.user.id]
   );
   if (dupes.length) return res.status(409).json({ error: 'Category already exists' });
+
   const [result] = await pool.query('INSERT INTO categories (user_id, name) VALUES (?, ?)', [req.user.id, name]);
   res.status(201).json({ id: result.insertId, name, is_default: false });
 }));

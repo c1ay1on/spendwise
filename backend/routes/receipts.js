@@ -26,16 +26,16 @@ function hasAllowedSignature(buf) {
 router.post('/:id/receipt', auth, upload.single('receipt'), wrap(async (req, res) => {
   const id = parseId(req.params.id);
   if (!id) return res.status(404).json({ error: 'Expense not found' });
-  
+
   const [rows] = await pool.query('SELECT receipt_key FROM expenses WHERE id = ? AND user_id = ?', [id, req.user.id]);
   if (!rows[0]) return res.status(404).json({ error: 'Expense not found' });
-  
+
   if (!req.file) return res.status(400).json({ error: 'No file uploaded (the field name must be "receipt")' });
   if (!hasAllowedSignature(req.file.buffer)) return res.status(400).json({ error: 'File is not a valid jpg, png or pdf' });
 
   const key = await saveReceipt(req.user.id, req.file);
   await pool.query('UPDATE expenses SET receipt_key = ? WHERE id = ? AND user_id = ?', [key, id, req.user.id]);
-  
+
   if (rows[0].receipt_key) {                                // replacing an old receipt: remove it
     try { await deleteReceipt(rows[0].receipt_key); } catch (e) { console.error('Old receipt cleanup failed:', e.name); }
   }
@@ -45,11 +45,11 @@ router.post('/:id/receipt', auth, upload.single('receipt'), wrap(async (req, res
 router.get('/:id/receipt', auth, wrap(async (req, res) => {
   const id = parseId(req.params.id);
   if (!id) return res.status(404).json({ error: 'Expense not found' });
-  
+
   const [rows] = await pool.query('SELECT receipt_key FROM expenses WHERE id = ? AND user_id = ?', [id, req.user.id]);
   if (!rows[0]) return res.status(404).json({ error: 'Expense not found' });
   if (!rows[0].receipt_key) return res.status(404).json({ error: 'This expense has no receipt' });
-  
+
   res.json({ url: await getReceiptUrl(rows[0].receipt_key) });
 }));
 

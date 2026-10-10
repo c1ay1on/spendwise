@@ -24,9 +24,12 @@ async function validateBody(body, userId) {
   body = body || {};
   const amount = parseAmount(body.amount);
   if (amount === null) return { error: 'amount must be greater than 0, with at most 2 decimals' };
+
   const categoryId = parseId(body.category_id);
   if (!categoryId) return { error: 'category_id is required' };
+
   if (!isValidDate(body.expense_date)) return { error: 'expense_date must be a valid date (YYYY-MM-DD)' };
+
   const description = body.description == null ? '' : String(body.description).trim();
   if (description.length > 255) return { error: 'description must be at most 255 characters' };
 
@@ -42,6 +45,7 @@ async function validateBody(body, userId) {
 router.get('/', auth, wrap(async (req, res) => {
   const where = ['e.user_id = ?'];
   const params = [req.user.id];
+
   if (req.query.month) {
     if (!isValidMonth(req.query.month)) return res.status(400).json({ error: 'month must be YYYY-MM' });
     const { start, end } = monthRange(req.query.month);
@@ -54,6 +58,7 @@ router.get('/', auth, wrap(async (req, res) => {
     where.push('e.category_id = ?');
     params.push(categoryId);
   }
+
   // 'where' only ever contains the fixed strings above; user values always go through '?'
   const [rows] = await pool.query(
     `${EXPENSE_SELECT} WHERE ${where.join(' AND ')} ORDER BY e.expense_date DESC, e.id DESC`,
@@ -65,6 +70,7 @@ router.get('/', auth, wrap(async (req, res) => {
 router.post('/', auth, wrap(async (req, res) => {
   const { error, values } = await validateBody(req.body, req.user.id);
   if (error) return res.status(400).json({ error });
+
   const [result] = await pool.query(
     `INSERT INTO expenses (user_id, category_id, amount, description, expense_date)
      VALUES (?, ?, ?, ?, ?)`,
@@ -76,6 +82,7 @@ router.post('/', auth, wrap(async (req, res) => {
 router.put('/:id', auth, wrap(async (req, res) => {
   const id = parseId(req.params.id);
   if (!id || !(await getExpense(req.user.id, id))) return res.status(404).json({ error: 'Expense not found' });
+
   const { error, values } = await validateBody(req.body, req.user.id);
   if (error) return res.status(400).json({ error });
 

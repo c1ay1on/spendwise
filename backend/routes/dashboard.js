@@ -8,18 +8,20 @@ const { buildSummary } = require('../services/calc');
 router.get('/summary', auth, wrap(async (req, res) => {
   const month = req.query.month || currentMonth();
   if (!isValidMonth(month)) return res.status(400).json({ error: 'month must be YYYY-MM' });
-  
+
   const { start, end } = monthRange(month);
   const uid = req.user.id;
 
   const [[budgetRows], [totalRows], [byCategory], [daily]] = await Promise.all([
     pool.query('SELECT amount FROM budgets WHERE user_id = ? AND month = ?', [uid, month]),
+
     pool.query(
       `SELECT COALESCE(SUM(amount), 0) AS total
          FROM expenses
         WHERE user_id = ? AND expense_date >= ? AND expense_date < ?`,
       [uid, start, end]
     ),
+
     pool.query(
       `SELECT c.id AS category_id, c.name AS category_name, SUM(e.amount) AS total
          FROM expenses e
@@ -29,6 +31,7 @@ router.get('/summary', auth, wrap(async (req, res) => {
         ORDER BY total DESC`,
       [uid, start, end]
     ),
+
     pool.query(
       `SELECT e.expense_date AS date, SUM(e.amount) AS total
          FROM expenses e
