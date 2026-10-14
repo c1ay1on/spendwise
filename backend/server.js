@@ -30,6 +30,7 @@ app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/expenses', require('./routes/receipts'));   // /api/expenses/:id/receipt
 app.use('/api/budgets', require('./routes/budgets'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/ai', require('./routes/ai'));
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Route not found' }));
 
