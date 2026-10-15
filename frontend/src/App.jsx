@@ -9,6 +9,8 @@ const Expenses = lazy(() => import("./pages/Expenses.jsx"));
 const Login = lazy(() => import("./pages/Login.jsx"));
 const Register = lazy(() => import("./pages/Register.jsx"));
 const Forecasts = lazy(() => import("./pages/Forecasts.jsx"));
+const SavingsGoals = lazy(() => import("./pages/SavingsGoals.jsx"));
+const Subscriptions = lazy(() => import("./pages/Subscriptions.jsx"));
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
             <Route path="expenses" element={<Expenses />} />
             <Route path="budget" element={<Budget />} />
 	    <Route path="forecasts" element={<Forecasts />} />
+            <Route path="goals" element={<SavingsGoals />} />
+            <Route path="subscriptions" element={<Subscriptions />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

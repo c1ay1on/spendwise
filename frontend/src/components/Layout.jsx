@@ -18,6 +18,8 @@ export default function Layout() {
           <NavLink to="/expenses">Transactions</NavLink>
           <NavLink to="/budget">Monthly budget</NavLink>
 	  <NavLink to="/forecasts">Forecasts</NavLink>
+	  <NavLink to="/goals">Savings Goals</NavLink>
+          <NavLink to="/subscriptions">Subscriptions</NavLink>
         </nav>
         <div className="sidebar-user">
           <span className="avatar">{user?.name?.[0]?.toUpperCase() || "S"}</span>
