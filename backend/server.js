@@ -29,6 +29,8 @@ app.use('/api/categories', require('./routes/categories'));
 app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/expenses', require('./routes/receipts'));   // /api/expenses/:id/receipt
 app.use('/api/budgets', require('./routes/budgets'));
+app.use('/api/goals', require('./routes/goals'));
+app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/ai', require('./routes/ai'));
 
@@ -40,8 +42,11 @@ app.use((err, req, res, next) => {
   if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Invalid JSON body' });
   if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'File too large (max 10 MB)' });
   if (err.status && err.status < 500) return res.status(err.status).json({ error: err.message });
-  console.error(`${req.method} ${req.path} failed:`, err.code || err.name);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error( `${req.method} ${req.path} failed:`,
+  err.code || err.name,
+  err.sqlMessage || ''
+);
+res.status(500).json({ error: 'Internal server error' });
 });
 
 app.listen(PORT, '127.0.0.1', () => {
