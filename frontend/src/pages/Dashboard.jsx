@@ -16,18 +16,37 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showMonthMessage, setShowMonthMessage] = useState(false);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setShowMonthMessage(false);
     setError("");
     api(`/api/dashboard/summary?month=${encodeURIComponent(month)}`)
-      .then((data) => { if (active) setSummary(data); })
+      .then((data) => {
+	if (active) {
+	    setSummary(data);
+	    setShowMonthMessage(
+      month < getCurrentMonth() && data.budget != null
+    );
+  }
+})
       .catch((err) => { if (active) setError(err.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [month]);
 
+
+useEffect(() => {
+  if (!showMonthMessage) return;
+
+  const timer = window.setTimeout(() => {
+    setShowMonthMessage(false);
+  }, 60000);
+
+  return () => window.clearTimeout(timer);
+}, [showMonthMessage]);
   return (
     <>
       <header className="page-header">
@@ -37,7 +56,39 @@ export default function Dashboard() {
         </label>
       </header>
       {error && <p className="error-banner" role="alert">{error}</p>}
-      {loading && <p className="loading">Loading your summary…</p>}
+      {showMonthMessage && summary && month < getCurrentMonth() && (
+  <div
+    className={`month-recap-banner ${
+      summary.remaining < 0 ? "month-recap-over" : "month-recap-saved"
+    }`}
+    role="status"
+    aria-live="polite"
+  >
+    <div className="month-recap-content">
+      <strong>
+        {summary.remaining < 0
+          ? `You exceeded your budget by ${money(Math.abs(summary.remaining))} this month.`
+          : `You stayed ${money(summary.remaining)} under budget this month!`}
+      </strong>
+
+      <p>
+        {summary.remaining < 0
+          ? "You can try better next month. Every month is a fresh start!"
+          : "Keep going! You're doing great with your spending."}
+      </p>
+    </div>
+
+    <button
+      type="button"
+      className="month-recap-close"
+      onClick={() => setShowMonthMessage(false)}
+      aria-label="Dismiss monthly recap"
+    >
+      Dismiss
+    </button>
+  </div>
+)}
+	{loading && <p className="loading">Loading your summary…</p>}
       {!loading && summary && (
         <>
           {summary.alert !== "none" && (
