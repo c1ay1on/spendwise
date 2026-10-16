@@ -8,7 +8,7 @@ const { currentMonth, monthRange } = require('../utils/dates');
 // A conservative first-pass topic filter. The model is also instructed
 // to refuse unrelated requests; neither check is a perfect classifier.
 const FINANCE_TERMS =
-  /\b(spend|spending|spent|expense|expenses|budget|budgets|transaction|transactions|finance|financial|money|save|saving|savings|category|categories|overspend|bill|bills|rent|grocery|groceries|income|debt|subscription|cash flow|purchase|purchases|afford|affordable|monthly|month|cost|costs|payment|payments|wallet|allowance|reduce my spending|financial assistant)\b/i;
+  /\b(spend|spending|spent|expense|expenses|budget|budgets|transaction|transactions|finance|financial|money|save|saving|savings|category|categories|overspend|bill|bills|rent|grocery|groceries|income|debt|subscription|cash flow|purchase|purchases|afford|affordable|monthly|month|cost|costs|payment|payments|wallet|allowance|subscription|expenditure|reduce my spending|financial assistant)\b/i;
 
 const GREETING = /^(hi|hello|hey|good morning|good afternoon|good evening)[!. ]*$/i;
 
@@ -79,13 +79,88 @@ router.post('/chat', auth, wrap(async (req, res) => {
       )
     ]);
 
-  const financialContext = {
-    currentMonth: month,
-    budget: budgetRows[0]?.amount ?? null,
-    totalSpentThisMonth: totalRows[0]?.total ?? 0,
-    spendingByCategoryThisMonth: categoryRows,
-    recentExpenses: recentRows
-  };
+
+  // Retrieve active subscriptions and their next pending payments.
+  const [subscriptionRows] = await pool.query(
+    `SELECT
+       s.name,
+       s.amount,
+       s.recurrence,
+       s.next_due_date,
+       (
+         SELECT MIN(p.due_date)
+         FROM subscription_payments p
+         WHERE p.subscription_id = s.id
+           AND p.status = 'pending'
+           AND p.due_date >= CURDATE()
+       ) AS next_pending_due_date
+     FROM subscriptions s
+     WHERE s.user_id = ? AND s.active = 1
+     ORDER BY COALESCE(
+       (
+         SELECT MIN(p.due_date)
+         FROM subscription_payments p
+         WHERE p.subscription_id = s.id
+           AND p.status = 'pending'
+           AND p.due_date >= CURDATE()
+       ),
+       s.next_due_date
+     ) ASC`,
+    [userId]
+  );
+
+  // Retrieve active savings goals and their progress.
+  const [goalRows] = await pool.query(
+    `SELECT
+       g.name,
+       g.target_amount,
+       g.target_date,
+       g.monthly_contribution,
+       g.status,
+       COALESCE(SUM(c.amount), 0) AS saved
+     FROM savings_goals g
+     LEFT JOIN goal_contributions c ON c.goal_id = g.id
+     WHERE g.user_id = ? AND g.status != 'archived'
+     GROUP BY g.id
+     ORDER BY g.created_at DESC`,
+    [userId]
+  );
+
+  const subscriptions = subscriptionRows.map((s) => ({
+    name: s.name,
+    amount: Number(s.amount),
+    recurrence: s.recurrence,
+    nextDueDate: String(
+      s.next_pending_due_date || s.next_due_date
+    ).slice(0, 10)
+  }));
+
+  const savingsGoals = goalRows.map((g) => ({
+    name: g.name,
+    targetAmount: Number(g.target_amount),
+    saved: Number(g.saved),
+    remaining: Math.max(
+      0,
+      Number(g.target_amount) - Number(g.saved)
+    ),
+    targetDate: g.target_date,
+    monthlyContribution: g.monthly_contribution == null
+      ? null
+      : Number(g.monthly_contribution),
+    status: g.status
+  }));
+
+const financialContext = {
+  currentMonth: month,
+  budget: budgetRows[0]?.amount ?? null,
+  totalSpentThisMonth: totalRows[0]?.total ?? 0,
+  spendingByCategoryThisMonth: categoryRows,
+  recentExpenses: recentRows,
+
+  // New features
+  subscriptions,
+  savingsGoals
+};
 
   // Only accept normal chat roles and short text entries from recent history.
   const safeHistory = history
@@ -129,6 +204,14 @@ or budgets. Never request passwords, API keys, or authentication tokens.
 Currency values are shown in the user's app currency; do not assume a currency
 symbol if it is not specified.
 
+You can answer questions about the user's active subscriptions,
+their upcoming pending payment dates and amounts, and their
+savings goals and progress using the supplied financial context.
+
+When asked about the next subscription due, use the supplied
+subscriptions data and identify the earliest relevant upcoming
+due date. If no active subscriptions exist, say so clearly.
+Never invent subscription records, due dates, or amounts.
 
 RESPONSE STYLE:
 - Write for an everyday person, not a financial analyst.
